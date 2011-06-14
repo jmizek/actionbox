@@ -1,4 +1,13 @@
 README file
 -----------
 
-...but there's nothing to read
+To play the game, download python 2.x from Python.org (I'm using 2.6.6, hopefully this works with 2.7.2)
+Now download and install pygame from pygame.org
+if your python installation came with IDLE:
+	Open IDLE
+	Do File > Open... > mario.py
+	Run (F5)
+else:
+	Add python to your path, if it isn't already there
+	Open a command prompt and run python on mario.py
+
