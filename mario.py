@@ -25,7 +25,7 @@ white = (255,255,255)
 blue = (0,0,255)
 gravity = 1 #acceleration due to gravity
 terminal_velocity = 9 #max downward speed
-max_jump = 5
+max_jump = 7
 
 # This class represents the bar at the bottom that the player controls
 class Wall(pygame.sprite.Sprite):
@@ -43,8 +43,8 @@ class Wall(pygame.sprite.Sprite):
         self.rect.top = y
         self.rect.left = x
         
-        
-# This class represents the bar at the bottom that the player controls
+
+# This class the player's sprite, Actionbox
 class Player(pygame.sprite.Sprite):
 
     # Set speed vector
@@ -76,30 +76,21 @@ class Player(pygame.sprite.Sprite):
     
     # Move player if necessary
     def update(self,walls):
-        # Get the old x position, in case we need to go back to it
-        old_x=self.rect.left
-        new_x=old_x+self.x_speed
-        self.rect.left = new_x
-        
-        # Did this update cause us to hit a wall?
-        collide = pygame.sprite.spritecollide(self, walls, False)
-        if collide:
+        #check for left/right collisions
+        old_x=self.rect.left # Get the old x position in case we need to go back
+        self.rect.left+=self.x_speed
+        if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
             self.rect.left=old_x #Hit a wall. Go back to the old position
 
-        # Check for surface beneath us
-        old_y=self.rect.top # Get the old y position, in case we need to go back to it
-        new_y=old_y+1 #Gravity factor
-        self.rect.top = new_y
-        collide = pygame.sprite.spritecollide(self, walls, False) #check for collision
-        if collide: #there's something beneath us
-            self.has_jump=True #give jumps back -- maybe need to check if jumping?
-            self.rect.top=old_y
-            if self.y_speed > 0:
-                self.y_speed=0
+        # Check for surface one pixel beneath player 
+        self.rect.top+=1 # Theoretically move one pixel down
+        if pygame.sprite.spritecollide(self, walls, False): #there's something beneath us
+            self.has_jump=True #give jumps back
         else: #nothing beneath us, apply gravity
             self.has_jump=False
             if self.y_speed < terminal_velocity: #have we reached terminal velocity?
                 self.y_speed+=gravity #no, go faster
+        self.rect.top-=1 # Restore position
 
         # If jumping, handle that
         if self.jumping:
@@ -109,26 +100,20 @@ class Player(pygame.sprite.Sprite):
             else: #reached max_jump, stop jumping
                 self.jumping=False
 
+        # Are we moving down?
         if  self.y_speed>0:
-            for i in range(0, self.y_speed):
-                old_y=self.rect.top # Get the old y position, in case we need to go back to it
-                new_y=old_y+1
-                self.rect.top = new_y
-                # Did this update cause us to hit a wall?
-                collide = pygame.sprite.spritecollide(self, walls, False)
-                if collide:
-                    self.rect.top=old_y # Hit a wall. Go back to the old position
-        elif self.y_speed<0:        
-            for i in range(self.y_speed, 0):
-                old_y=self.rect.top # Get the old y position, in case we need to go back to it
-                new_y=old_y-1
-                self.rect.top = new_y
-                # Did this update cause us to hit a wall?
-                collide = pygame.sprite.spritecollide(self, walls, False)
-                if collide:
-                    self.rect.top=old_y # Hit a wall. Go back to the old position
+            for i in range(0, self.y_speed): # evaluate potential collision one pixel at a time
+                self.rect.top+=1
+                if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
+                    self.rect.top-=1 # Hit a wall. Go back to the old position
+                    self.y_speed=0 # Cancel out veloctiy
+        elif self.y_speed<0: # Are we moving up?       
+            for i in range(self.y_speed, 0): # evaluate potential collision one pixel at a time
+                self.rect.top-=1
+                if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
+                    self.rect.top+=1 # Hit a wall. Go back to the old position
+                    self.y_speed=0 # Cancel out veloctiy
             
-score = 0
 # Call this function so the Pygame library can initialize itself
 pygame.init()
 
@@ -147,7 +132,7 @@ background = background.convert()
 # Fill the screen with a black background
 background.fill(black)
 
-# Create the player paddle object
+# Create the player sprite
 player = Player( 50,50 )
 movingsprites = pygame.sprite.RenderPlain()
 movingsprites.add(player)
@@ -185,9 +170,6 @@ while done == False:
                 player.has_jump=False
                 player.jumping=True
                 player.jump_duration=0
-                    
-            #if event.key == pygame.K_DOWN:
-                #player.changespeed(0,3)
                 
         if event.type == pygame.KEYUP: #releasing a key
             if event.key == pygame.K_LEFT:
@@ -196,9 +178,6 @@ while done == False:
                 player.changespeed(-3,0)
             if event.key == pygame.K_UP and player.jumping:
                 player.jumping=False
-                
-            #if event.key == pygame.K_DOWN:
-                #player.changespeed(0,-3)
                 
     player.update(wall_list)
     
