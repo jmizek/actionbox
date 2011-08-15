@@ -1,7 +1,7 @@
 # ========================================================
 # .--.   ,.  ,--. ----- , ,--.  ;.  ,  ;-.  ,--. . ,  .--.
-# ||||  /_\ /      /   / /   ) / \ /  /_ / /   ) }{   ||||
-# '--' /  \ \__,  /   /  \__/ /  \/  /__)  \__/ / \   '--'
+# ||||  /_| /      /   / /   ) / \ /  /_ / /   ) }{   ||||
+# '--' /  | \__,  /   /  \__/ /  \/  /__)  \__/ / \   '--'
 # ========================================================
 # 
 # Actionbox - RPG edition
@@ -39,7 +39,6 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.top = y
         self.rect.left = x
-        
 
 # This class the player's sprite, Actionbox
 class Player(pygame.sprite.Sprite):
@@ -47,15 +46,16 @@ class Player(pygame.sprite.Sprite):
     # Set speed vector
     x_speed=0
     y_speed=0
+    x_left=False
+    y_down=True
 
     # Constructor function
-    def __init__(self,x,y):
+    def __init__(self,x,y,filename):
         # Call the parent's constructor
         pygame.sprite.Sprite.__init__(self)
- 
-        # Set height, width
-        self.image = pygame.Surface([15, 15])
-        self.image.fill(white)
+
+        self.image = pygame.image.load(filename).convert()
+        self.image.set_colorkey(white) 
 
         # Make our top-left corner the passed-in location.
         self.rect = self.image.get_rect()
@@ -66,34 +66,45 @@ class Player(pygame.sprite.Sprite):
     def changespeed(self,x,y):
         self.x_speed+=x
         self.y_speed+=y
-    
+
+    # Change the player's sprite to match the direction of movement
+    def change_sprite(self):
+        if abs(self.x_speed)>abs(self.y_speed):
+            if self.x_speed<0:
+                self.image = pygame.image.load("arrow_l.png").convert()
+            elif self.x_speed>0:
+                self.image = pygame.image.load("arrow_r.png").convert()
+        elif abs(self.x_speed)<abs(self.y_speed):
+            if self.y_speed<0:
+                self.image = pygame.image.load("arrow_u.png").convert()
+            elif self.y_speed>0:
+                self.image = pygame.image.load("arrow_d.png").convert()
+            
+        
     # Move player if necessary
     def update(self,walls):
-
-        # Are we moving right?
-        if  self.x_speed>0:
+        if self.x_speed>0: # Are we moving right?
             for i in range(0, self.x_speed): # evaluate potential collision one pixel at a time
                 self.rect.left+=1
                 if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
                     self.rect.left-=1 # Hit a wall. Go back to the old position
-        elif self.x_speed<0: # Are we moving left?       
+        elif self.x_speed<0: # Are we moving left?
             for i in range(self.x_speed, 0): # evaluate potential collision one pixel at a time
                 self.rect.left-=1
                 if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
                     self.rect.left+=1 # Hit a wall. Go back to the old position
                     
-        # Are we moving down?
-        if  self.y_speed>0:
+        if self.y_speed>0: # Are we moving down?
             for i in range(0, self.y_speed): # evaluate potential collision one pixel at a time
                 self.rect.top+=1
                 if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
                     self.rect.top-=1 # Hit a wall. Go back to the old position
-        elif self.y_speed<0: # Are we moving up?       
+        elif self.y_speed<0: # Are we moving up?
             for i in range(self.y_speed, 0): # evaluate potential collision one pixel at a time
                 self.rect.top-=1
                 if pygame.sprite.spritecollide(self, walls, False): # Did this update cause us to hit a wall?
                     self.rect.top+=1 # Hit a wall. Go back to the old position
-            
+
 # Call this function so the Pygame library can initialize itself
 pygame.init()
 
@@ -113,7 +124,7 @@ background = background.convert()
 background.fill(black)
 
 # Create the player sprite
-player = Player( 50,50 )
+player = Player( 50,50,"arrow_d.png")
 movingsprites = pygame.sprite.RenderPlain()
 movingsprites.add(player)
 
@@ -161,6 +172,8 @@ while done == False:
                 player.changespeed(0,-3)
                 
     player.update(wall_list)
+
+    player.change_sprite()
     
     screen.fill(black)
     
